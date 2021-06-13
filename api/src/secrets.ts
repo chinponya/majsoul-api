@@ -23,7 +23,7 @@ export interface ISecrets {
 
 export function getSecretsFilePath(): string {
 	return process.env.NODE_ENV === "production"
-		? "/run/secrets/majsoul.json"
+		? process.env.MAJSOUL_API_SECRETS
 		: path.join(path.dirname(__filename), 'secrets.json');
 }
 
