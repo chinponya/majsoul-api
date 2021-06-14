@@ -309,8 +309,8 @@ interface PlayerContestTypeResults {
 }
 
 export class RestApi {
-	private static getKey(keyName: string): Promise<Buffer> {
-		return new Promise<Buffer>((res, rej) => fs.readFile(path.join(RestApi.keyLocation, keyName), (err, key) => {
+	private static getKey(keyPath: string): Promise<Buffer> {
+		return new Promise<Buffer>((res, rej) => fs.readFile(keyPath, (err, key) => {
 			if (err) {
 				console.log("couldn't load private key for auth tokens, disabling rigging");
 				console.log(err);
@@ -318,10 +318,6 @@ export class RestApi {
 			}
 			res(key);
 		}));
-	}
-
-	private static get keyLocation(): string {
-		return process.env.NODE_ENV === "production" ? "/run/secrets/" : path.dirname(process.argv[1]);
 	}
 
 	private app: express.Express;
@@ -1044,7 +1040,7 @@ export class RestApi {
 		this.oauth2Client = new google.auth.OAuth2(
 			secrets.google.clientId,
 			secrets.google.clientSecret,
-			`${process.env.NODE_ENV === "production" ? "https" : `http`}://${process.env.NODE_ENV === "production" ? "riichi.moe" : `localhost:8080`}/rigging/google`
+			`${process.env.NODE_ENV === "production" ? "https" : `http`}://${process.env.NODE_ENV === "production" ? process.env.DOMAIN : `localhost`}/rigging/google`
 		);
 
 		if (root?.username != null && root?.password != null) {
@@ -1067,12 +1063,12 @@ export class RestApi {
 			);
 		}
 
-		this.app.listen(9515, () => console.log(`Express started`));
+		this.app.listen(process.env.LISTEN_PORT || 9515, () => console.log(`Express started`));
 
 		let privateKey: Buffer, publicKey: Buffer;
 		try {
-			privateKey = await RestApi.getKey("riichi.key.pem");
-			publicKey = await RestApi.getKey("riichi.crt.pem");
+			privateKey = await RestApi.getKey(process.env.MAJSOUL_PRIVATE_KEY);
+			publicKey = await RestApi.getKey(process.env.MAJSOUL_PUBLIC_KEY);
 		} catch (err) {
 			console.log("Couldn't load keys for auth tokens, disabling rigging");
 			console.log(err);
