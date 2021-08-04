@@ -255,5 +255,4 @@ export interface User<Id = any> {
 export interface Config<Id = any> {
 	_id: Id;
 	featuredContest?: Id;
-	googleRefreshToken?: string;
 }

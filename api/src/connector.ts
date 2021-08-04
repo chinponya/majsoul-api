@@ -1,14 +1,11 @@
-import { Spreadsheet } from "./google";
 import { ChangeEventCR, ChangeEventUpdate, ObjectId } from 'mongodb';
 import { Api as AdminApi } from "./majsoul/admin/Api";
 import * as majsoul from "./majsoul";
 import * as store from "./store";
-import { Credentials } from 'google-auth-library';
 import { getSecrets } from "./secrets";
 import { combineLatest, concat, defer, from, fromEvent, merge, Observable, of } from "rxjs";
 import { catchError, distinctUntilChanged, filter, map, mergeAll, pairwise, share, shareReplay, takeUntil } from 'rxjs/operators';
 import { Majsoul, Store } from ".";
-import { google } from "googleapis";
 import { ContestTracker } from "./ContestTracker";
 import { parseGameRecordResponse } from "./majsoul/types/parseGameRecordResponse";
 
@@ -54,58 +51,6 @@ async function main() {
 		process.exit(1);
 	}
 
-	const googleAuth = new google.auth.OAuth2(
-		secrets.google.clientId,
-		secrets.google.clientSecret,
-	);
-
-	const googleTokenValid$ = process.env.NODE_ENV === "production"
-		? concat(
-			defer(() => googleAuth.getAccessToken()).pipe(
-				map(response => response.token),
-				catchError(() => of(null))
-			),
-			fromEvent<Credentials>(googleAuth, "tokens").pipe(
-				map((tokens) => tokens?.access_token),
-			)
-		).pipe(
-			distinctUntilChanged(),
-			map(token => token != null),
-			shareReplay(1),
-		)
-		: of(false);
-
-	googleTokenValid$.subscribe(tokenIsValid => {
-		console.log(`google token is ${tokenIsValid ? "" : "in"}valid`);
-	})
-
-	// oauth token
-	merge(
-		mongoStore.ConfigChanges.pipe(
-			filter(change => change.operationType === "update"
-				&& change.updateDescription.updatedFields.googleRefreshToken !== undefined
-			),
-			map((updateEvent: ChangeEventUpdate<store.Config<ObjectId>>) => updateEvent.updateDescription.updatedFields.googleRefreshToken)
-		),
-		defer(
-			() => from(
-				mongoStore.configCollection.find().toArray()
-			).pipe(
-				mergeAll(),
-				map(config => config.googleRefreshToken)
-			)
-		)
-	).subscribe(refresh_token => {
-		if (googleAuth.credentials.refresh_token === refresh_token || refresh_token == null) {
-			console.log(`refresh token not valid in database`);
-			return;
-		}
-
-		googleAuth.setCredentials({
-			refresh_token
-		});
-		googleAuth.getRequestHeaders();
-	});
 
 	// player search
 	merge(
@@ -304,47 +249,6 @@ async function main() {
 		tracker.LiveGames$.subscribe(gameId => {
 			recordGame(contestId, gameId, mongoStore, api);
 		});
-
-		const spreadsheet$ = combineLatest([
-			tracker.SpreadsheetId$,
-			googleTokenValid$,
-		]).pipe(
-			filter(([spreadsheetId, tokenIsValid]) => tokenIsValid && spreadsheetId != null),
-			share(),
-		);
-
-		spreadsheet$.subscribe(async ([spreadsheetId]) => {
-			const spreadsheet = new Spreadsheet(spreadsheetId, googleAuth);
-			try {
-				await spreadsheet.init();
-			} catch (error) {
-				console.log(`Spreadsheet #${spreadsheetId} failed to initialise.`, error);
-				return;
-			}
-
-			console.log(`Tracking [${spreadsheetId}]`);
-			tracker.RecordedGames$.pipe(
-				takeUntil(spreadsheet$),
-			).subscribe(game => {
-				spreadsheet.addGame(game);
-				spreadsheet.addGameDetails(game);
-			})
-
-			tracker.Teams$.pipe(
-				takeUntil(spreadsheet$),
-			).subscribe(async (teams) => {
-				const players = await mongoStore.playersCollection.find({
-					_id: {
-						$in: teams.map(team => team.players).flat().map(team => team._id)
-					}
-				}).toArray();
-
-				spreadsheet.updateTeams(
-					teams,
-					players.reduce((total, next) => (total[next._id.toHexString()] = next, total), {})
-				);
-			});
-		})
 	});
 }
 

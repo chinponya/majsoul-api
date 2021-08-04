@@ -187,23 +187,4 @@ export class ContestTracker {
 			takeUntil(this.ContestDeleted$)
 		);
 	}
-
-	public get SpreadsheetId$() {
-		return merge(
-			defer(() => from(this.mongoStore.contestCollection.findOne({ _id: this.id })))
-				.pipe(map(contest => contest.spreadsheetId)),
-			this.ContestUpdates$.pipe(
-				filter(event => event.updateDescription.removedFields.indexOf(nameofContest("spreadsheetId")) >= 0
-					|| event.updateDescription.updatedFields?.notFoundOnMajsoul === true),
-				mapTo(null as string)
-			),
-			this.ContestUpdates$.pipe(
-				filter(event => event.updateDescription.updatedFields?.spreadsheetId !== undefined),
-				map(event => event.updateDescription.updatedFields.spreadsheetId)
-			)
-		).pipe(
-			distinctUntilChanged(),
-			takeUntil(this.ContestDeleted$)
-		);
-	}
 }

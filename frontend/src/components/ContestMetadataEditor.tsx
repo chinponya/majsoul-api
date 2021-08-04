@@ -148,7 +148,6 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 	const [displayName, setDisplayName] = useState<string>(undefined);
 	const [maxGames, setMaxGames] = useState<number>(undefined);
 	const [anthem, setAnthem] = useState<string>(undefined);
-	const [spreadsheetId, setSpreadsheetId] = useState<string>(undefined);
 	const [initialPhaseName, setInitialPhaseName] = useState<string>(undefined);
 	const [tagline, setTagline] = useState<string>(undefined);
 	const [taglineAlternate, setTaglineAlternate] = useState<string>(undefined);
@@ -313,18 +312,6 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 		<Row className="no-gutters">
 			<Col>
 				<TextField
-					label="Spreadsheet ID"
-					id="contestSpreadsheetIdEditor"
-					fallbackValue={contest.spreadsheetId}
-					onCommit={(value) => {
-						setSpreadsheetId(value);
-						return value;
-					}} />
-			</Col>
-		</Row>
-		<Row className="no-gutters">
-			<Col>
-				<TextField
 					label="Initial Phase Name"
 					id="contestInitialPhaseName"
 					fallbackValue={contest.initialPhaseName}
@@ -429,7 +416,6 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 						&& (contest.tourneyType === tourneyType || tourneyType === undefined)
 						&& (contest.displayName === displayName || displayName === undefined)
 						&& (contest.anthem === anthem || anthem === undefined)
-						&& (contest.spreadsheetId === spreadsheetId || spreadsheetId === undefined)
 						&& (contest.initialPhaseName === initialPhaseName || initialPhaseName === undefined)
 						&& (contest.tagline === tagline || tagline === undefined)
 						&& (contest.taglineAlternate === taglineAlternate || taglineAlternate === undefined)
@@ -450,7 +436,6 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 							maxGames,
 							displayName,
 							bonusPerGame,
-							spreadsheetId,
 							track,
 							adminPlayerFetchRequested
 						}).then(contest => dispatchContestPatchedAction(dispatch, contest));

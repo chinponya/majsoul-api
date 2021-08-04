@@ -1,4 +1,3 @@
-import { Credentials } from 'google-auth-library';
 import * as fs from "fs";
 import * as path from "path";
 
@@ -7,10 +6,6 @@ export interface ISecrets {
 		uid: string;
 		accessToken: string;
 	};
-	google: {
-		clientId: string;
-		clientSecret: string;
-	}
 	mongo: {
 		username: string;
 		password: string;

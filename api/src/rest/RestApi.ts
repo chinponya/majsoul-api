@@ -13,8 +13,6 @@ import { concat, defer, from, Observable, of } from 'rxjs';
 import { map, mergeAll, mergeScan, pairwise, tap, toArray } from 'rxjs/operators';
 import { body, matchedData, oneOf, param, query, validationResult } from 'express-validator';
 import { Majsoul, Store } from '..';
-import { google } from 'googleapis';
-import { OAuth2Client } from 'google-auth-library';
 import { getSecrets } from '../secrets';
 import { latestStatsVersion, StatsVersion } from './types/stats/StatsVersion';
 import { Stats } from './types/stats';
@@ -321,8 +319,6 @@ export class RestApi {
 	}
 
 	private app: express.Express;
-
-	private oauth2Client: OAuth2Client;
 
 	constructor(private readonly mongoStore: store.Store) {
 		this.app = express();
@@ -1037,11 +1033,6 @@ export class RestApi {
 
 	public async init(root: { username: string, password: string }) {
 		const secrets = getSecrets();
-		this.oauth2Client = new google.auth.OAuth2(
-			secrets.google.clientId,
-			secrets.google.clientSecret,
-			`${process.env.NODE_ENV === "production" ? "https" : `http`}://${process.env.NODE_ENV === "production" ? process.env.DOMAIN : `localhost`}/rigging/google`
-		);
 
 		if (root?.username != null && root?.password != null) {
 			const salt = crypto.randomBytes(24).toString("hex");
@@ -1092,43 +1083,12 @@ export class RestApi {
 			}
 			next();
 		})
-
-			.get('/rigging/google',
-				query("state").optional(),
-				withData<{ state?: string }, any, { authUrl: string }>(async (data, req, res) => {
-					const authUrl = this.oauth2Client.generateAuthUrl({
-						access_type: 'offline',
-						scope: [
-							'https://www.googleapis.com/auth/spreadsheets'
-						],
-						state: data.state
-					});
-					res.send({
-						authUrl
-					})
-				})
-			)
-
-			.patch('/rigging/google',
-				body("code").isString().isLength({ min: 1 }),
-				withData<{ code: string }, any, void>(async (data, req, res) => {
-					const { tokens } = await this.oauth2Client.getToken(data.code);
-					this.mongoStore.configCollection.updateMany({}, {
-						$set: {
-							googleRefreshToken: tokens.refresh_token
-						}
-					})
-					res.send();
-				})
-			)
-
 			.patch<any, store.Contest<ObjectId>>('/contests/:id',
 				param("id").isMongoId(),
 				body(nameofContest('majsoulFriendlyId')).not().isString().bail().isInt({ min: 100000, lt: 1000000 }).optional({ nullable: true }),
 				body(nameofContest('type')).not().isString().bail().isNumeric().isWhitelisted(Object.keys(store.ContestType)).optional(),
 				body(nameofContest('subtype')).not().isString().bail().isNumeric().isWhitelisted(Object.keys(store.TourneyContestPhaseSubtype)).optional(),
 				body(nameofContest('anthem')).isString().bail().isLength({ max: 50 }).optional({ nullable: true }),
-				body(nameofContest('spreadsheetId')).isString().bail().optional({ nullable: true }),
 				body(nameofContest('tagline')).isString().bail().isLength({ max: 200 }).optional({ nullable: true }),
 				body(nameofContest('taglineAlternate')).isString().bail().isLength({ max: 200 }).optional({ nullable: true }),
 				body(nameofContest('displayName')).isString().bail().isLength({ max: 100 }).optional({ nullable: true }),

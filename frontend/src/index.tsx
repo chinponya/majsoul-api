@@ -26,7 +26,6 @@ import { ActionType, MajsoulAction } from "./actions";
 import { RiggingLogin } from "./components/rigging/RiggingLogin";
 import { fetchContestSummary } from "./api/Contests";
 import { ContestSessions } from "./components/ContestSessions";
-import { writeGoogleAuthCode } from "./api/Rigging";
 
 import "./init/dayjs";
 import "./init/i18n";
@@ -265,19 +264,6 @@ function ContestSessionsFromRoute() {
 	return <ContestSessions contestId={id} />
 }
 
-function GoogleAuthReceiver(): JSX.Element {
-	const location = useLocation();
-	const token = useSelector((state: IState) => state.user?.token);
-	const params = new URLSearchParams(location.search);
-	const code = params.get("code");
-	React.useEffect(() => {
-		if (token && code) {
-			writeGoogleAuthCode(token, code);
-		}
-	}, [token, code]);
-	return <Redirect to="/" />
-}
-
 function Footer() {
 	const { t, i18n } = useTranslation();
 
@@ -326,9 +312,6 @@ ReactDOM.render(
 					<Container className={`${styles.feed} bg-primary px-3 pb-3`} style={{ display: "flex", flexDirection: "column" }}>
 						<Row className="no-gutters">
 							<Switch>
-								<Route path="/rigging/google">
-									<GoogleAuthReceiver />
-								</Route>
 								<Route path="/rigging">
 									<RiggingLogin />
 								</Route>

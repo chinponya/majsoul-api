@@ -10,7 +10,7 @@ The foundation is the /api/src/majsoul folder. This is designed to be a standalo
 The /api/src/store folder is a collection of helpers and typings for the database. The riichi backend uses a mongodb store. In order to save time and prevent errors the types in the database are defined in this store folder and used throught the application. These objects are concerned with the riichi domain. It has ideas like "Teams" and "Sessions" which Majsoul does not have but are necessary for the league. These types are *specifically* the types that appear in the database. Types that are server and accepted by the rest api or client are defined elsewhere by extending these types. The database needs a username and password to access it. They are also provided for in the secrets file read by the backend application under the 'mongo' key. The store is also a library and needs to be consumed by something.
 
 ### Connector
-The connector is the executable that connects to the majsoul api, loads information about tournaments (known as Contests), players, and games, and dumps all that information into the database in a correct format. The data is relatively normalised. The connector also loads and dumps some data into the google docs spreadsheet. This is how we load the team information and session information. In order to connect you must get a google docs api token from google. Follow the instructions [here](https://developers.google.com/sheets/api/quickstart/python). You only need to do step 1 and get that token information into secrets.json. The second half of the connection is done interactively when you run the connector for the first time. The connector then sits and waits for updates from majsoul about games and keeps propogating those updates. It will exit if it loses connection to majsoul.
+The connector is the executable that connects to the majsoul api, loads information about tournaments (known as Contests), players, and games, and dumps all that information into the database in a correct format. The data is relatively normalised. The connector then sits and waits for updates from majsoul about games and keeps propogating those updates. It will exit if it loses connection to majsoul.
 
 In /api:
 ```
@@ -81,5 +81,3 @@ In docker production NODE_ENV === "production" and the code relies on this. Also
 ```
 MAJSOUL_ENV=staging
 ```
-
-To disable writing to the spreadsheet in staging.
