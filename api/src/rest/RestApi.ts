@@ -1054,12 +1054,12 @@ export class RestApi {
 			);
 		}
 
-		this.app.listen(process.env.LISTEN_PORT || 9515, () => console.log(`Express started`));
+		this.app.listen(secrets.listenPort || 9515, () => console.log(`Express started`));
 
 		let privateKey: Buffer, publicKey: Buffer;
 		try {
-			privateKey = await RestApi.getKey(process.env.MAJSOUL_PRIVATE_KEY);
-			publicKey = await RestApi.getKey(process.env.MAJSOUL_PUBLIC_KEY);
+			privateKey = await RestApi.getKey(secrets.privateKeyFile);
+			publicKey = await RestApi.getKey(secrets.publicKeyFile);
 		} catch (err) {
 			console.log("Couldn't load keys for auth tokens, disabling rigging");
 			console.log(err);

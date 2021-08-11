@@ -2,6 +2,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 export interface ISecrets {
+	listenPort?: number;
+	publicKeyFile: string;
+	privateKeyFile: string;
 	majsoul: {
 		uid: string;
 		accessToken: string;
@@ -17,11 +20,10 @@ export interface ISecrets {
 }
 
 export function getSecretsFilePath(): string {
-	return process.env.NODE_ENV === "production"
-		? process.env.MAJSOUL_API_SECRETS
-		: path.join(path.dirname(__filename), 'secrets.json');
+	return process.env.MAJSOUL_API_SECRETS ||
+		path.join(path.dirname(__filename), 'secrets.json');
 }
 
-export function getSecrets() : ISecrets {
+export function getSecrets(): ISecrets {
 	return JSON.parse(fs.readFileSync(getSecretsFilePath(), 'utf8'));
 }
