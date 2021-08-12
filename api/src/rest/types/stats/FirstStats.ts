@@ -1,4 +1,5 @@
 import { StatsVersion } from "./StatsVersion";
+import { Han } from "../../../majsoul/types/Han";
 
 export interface RiichiStats {
 	total: number;
@@ -45,6 +46,10 @@ export interface DrawStats {
 	riichi: number;
 }
 
+export type YakuCount = {
+	[key: string]: number;
+}
+
 export interface FirstStats {
 	version: StatsVersion.First;
 	stats: {
@@ -62,6 +67,7 @@ export interface FirstStats {
 		wins: SelfAgariStats;
 		dealins: AgariCategories<AgariCategories<AgariStats>>;
 		draws: DrawStats;
+		yakuAchieved: YakuCount;
 	}
 }
 
@@ -80,6 +86,15 @@ function createAgariStats(): AgariCategories<AgariStats> {
 			total: 0,
 		}
 	}
+}
+
+function createYakuStats(): YakuCount {
+	return Object.keys(Han)
+		.filter(key => typeof Han[key] === "number")
+		.reduce((acc, value) => {
+			acc[value] = 0;
+			return acc
+		}, {});
 }
 
 export function createStats(): FirstStats['stats'] {
@@ -125,5 +140,6 @@ export function createStats(): FirstStats['stats'] {
 			open: 0,
 			riichi: 0,
 		},
+		yakuAchieved: createYakuStats(),
 	}
 }

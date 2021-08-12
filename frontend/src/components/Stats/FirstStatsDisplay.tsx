@@ -4,6 +4,7 @@ import Container from "react-bootstrap/Container";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { AgariCategories } from "majsoul-api/dist/rest/types/stats/FirstStats";
+import { Han } from "majsoul-api/dist/majsoul/types";
 import { css } from "astroturf";
 import clsx from "clsx";
 import * as globalStyles from "../styles.sass";
@@ -43,12 +44,14 @@ interface StatDisplayProps {
 
 interface GraphData {
 	value: number;
+	displayValue?: string;
 	color?: GraphColor;
 }
 
 interface GraphSection {
 	label: string;
 	data: GraphData[];
+	legend?: boolean;
 }
 
 interface StatsGroup {
@@ -63,14 +66,18 @@ interface StatsPageProps {
 }
 
 enum GraphColor {
-	Red = "#921700",
 	Black = "#161616",
-	Green = "#006B24",
 	White = "#DDDCDC",
-	AltRed = "#F42600",
+	Red = "#921700",
+	Green = "#006B24",
+	Blue = "#3163C6",
+	Orange = "#DD6500",
+	Purple = "#854E9B",
+	Cyan = "#08B1A5",
 	AltBlack = "#756C6C",
-	AltGreen = "#00B33D",
 	AltWhite = "#F5F5F5",
+	AltRed = "#F42600",
+	AltGreen = "#00B33D",
 }
 
 function StatsColumn(props: StatsGroup & {
@@ -79,7 +86,7 @@ function StatsColumn(props: StatsGroup & {
 	return <Container>
 		{props.title && <Row><Col className="font-weight-bold">{props.title}</Col></Row>}
 		{props.graphData.map((stat) =>
-			(stat.value != null) && <StatField key={stat.label} label={stat.label} value={stat.value.toString() + "%"} color={stat.color} />
+			(stat.value != null) && <StatField key={stat.label} label={stat.label} value={stat.displayValue ?? stat.value.toString() + "%"} color={stat.color} />
 		)}
 		{props.fields?.map((stat) =>
 			<StatField key={stat.label} label={stat.label} value={stat.value} />
@@ -119,13 +126,17 @@ function FirstStatsPage(props: StatsPageProps): JSX.Element {
 		<Col>
 			<StatsColumn
 				{...(props.centerColumn ?? {})}
-				graphData={props.graphData.map(({ label, data }) => ({ label, ...data[0] }))}
+				graphData={props.graphData
+					.filter(dataSet => dataSet.legend !== false)
+					.map(({ label, data }) => ({ label, ...data[0] }))}
 			/>
 		</Col>
 		<Col>
 			<StatsColumn
 				{...(props.rightColumn ?? {})}
-				graphData={props.graphData.map(({ label, data }) => ({ label, ...data[1] }))}
+				graphData={props.graphData
+					.filter(dataSet => dataSet.legend !== false)
+					.map(({ label, data }) => ({ label, ...data[1] }))}
 			/>
 		</Col>
 	</Row>
@@ -145,6 +156,7 @@ enum StatsPageType {
 	Dealins,
 	Riichi,
 	Calls,
+	Yaku,
 }
 
 function SwapPageButton(props: {
@@ -213,8 +225,83 @@ export const FirstStatsDisplay = React.memo(function ({
 			);
 		}
 
+		const colorOrder = [
+			GraphColor.Green,
+			GraphColor.Red,
+			GraphColor.Blue,
+			GraphColor.Orange,
+			GraphColor.Purple,
+			GraphColor.Cyan,
+			GraphColor.AltGreen,
+			GraphColor.AltRed,
+		];
+
+		const maxColumnHeight = 8
+
+		stats.yakuAchieved["Yakuhai"] = [
+			Han.White_Dragon,
+			Han.Green_Dragon,
+			Han.Red_Dragon,
+			Han.Seat_Wind,
+			Han.Prevalent_Wind
+		].reduce((acc, yaku) => acc + stats.yakuAchieved[Han[yaku]], 0)
+
+		const ignoredYakus = [
+			Han.Riichi,
+			Han.Dora,
+			Han.Ura_Dora,
+			Han.Red_Five,
+			Han.Kita,
+			Han.Ippatsu,
+			Han.White_Dragon,
+			Han.Green_Dragon,
+			Han.Red_Dragon,
+			Han.Seat_Wind,
+			Han.Prevalent_Wind
+		].map(e => Han[e]);
+
+		const yakus = Object.entries(stats.yakuAchieved)
+			.filter(([yaku, count]) => !(count == 0 || ignoredYakus.includes(yaku)))
+			.sort(([k1, v1], [k2, v2]) => v2 - v1);
+
+		const yakuCount = yakus.reduce((acc, [name, count]) => acc + count, 0);
+
+		const otherYakuCount = yakus.slice(maxColumnHeight)
+			.reduce((acc, [name, count]) => acc + count, 0);
+
 
 		return {
+			[StatsPageType.Yaku]: {
+				graphData: [
+					...yakus.slice(0, maxColumnHeight).map(([yaku, count], index) => {
+						return {
+							label: t(`stats.yaku.names.${yaku.toLowerCase()}`),
+							data: [{
+								value: twoDecimalPlaceRound(100 * count / yakuCount),
+								displayValue: count.toString(),
+								color: colorOrder[index],
+							}],
+						}
+					}),
+					{
+						label: t("stats.overall.graph.other"),
+						data: [{
+							value: twoDecimalPlaceRound(100 * otherYakuCount / yakuCount),
+							color: GraphColor.White
+						}],
+						legend: false
+					}
+				],
+				rightColumn: {
+					fields: yakus.slice(maxColumnHeight, maxColumnHeight * 2).map(([yaku, count]) => {
+						return {
+							label: t(`stats.yaku.names.${yaku.toLowerCase()}`),
+							value: count.toString(),
+							// color: GraphColor.Red,
+						}
+					}),
+				}
+			},
 			[StatsPageType.Overall]: {
 				graphData: [
 					{

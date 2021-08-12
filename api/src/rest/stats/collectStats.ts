@@ -117,6 +117,12 @@ function collectFirstStats(
 					total.wins.tsumo++;
 				}
 
+				total.yakuAchieved = win.han.reduce((acc, value) => {
+					const key = Han[value];
+					acc[key] = (acc[key] + 1) || 1;
+					return acc;
+				}, total.yakuAchieved);
+
 				const category = selectCategory(stats.finalHandState.status, total.wins);
 				category.total++;
 				category.points += win.value;
