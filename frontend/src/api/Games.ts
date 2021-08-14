@@ -1,4 +1,5 @@
 import { Rest } from "majsoul-api";
+import { Han } from "majsoul-api/dist/majsoul/types";
 import { authHeader, buildApiUrl, jsonHeader } from "./utils";
 
 export async function createGame(token: string, game: Partial<Rest.GameResult<string>>): Promise<string> {
@@ -78,6 +79,23 @@ export function fetchGames(params: {
 export function fetchYakuman(contestId: string): Promise<Rest.YakumanInformation[]> {
 	return fetch(buildApiUrl(`contests/${contestId}/yakuman`).toString())
 		.then(response => response.json())
+}
+
+export function fetchYaku(params: {
+	contestId: string,
+	yaku: Han,
+	limit?: number
+}): Promise<Rest.YakuCount[]> {
+	const url = buildApiUrl(`contests/${params.contestId}/yaku`)
+	const queryParameters: Record<string, string> = { yaku: params.yaku.toString() };
+	if (params.limit != null) {
+		queryParameters.limit = params.limit?.toString();
+	}
+
+	url.search = new URLSearchParams(queryParameters).toString();
+
+	return fetch(url.toString())
+		.then(response => response.json());
 }
 
 export function fetchContestPlayerGames(contestId: string, playerId: string): Promise<Rest.GameResult<string>[]> {

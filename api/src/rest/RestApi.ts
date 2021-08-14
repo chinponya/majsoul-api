@@ -2,7 +2,8 @@ import * as util from 'util';
 import * as express from 'express';
 import * as cors from "cors";
 import * as store from '../store';
-import { GameResult, Session, ContestPlayer, Phase, PhaseMetadata, Contest, LeaguePhase, PlayerTourneyStandingInformation, YakumanInformation, TourneyPhase, PlayerRankingType, PlayerScoreTypeRanking, PlayerTeamRanking, SharedGroupRankingData, TourneyContestScoringDetailsWithId } from './types/types';
+import { GameResult, Session, ContestPlayer, Phase, PhaseMetadata, Contest, LeaguePhase, PlayerTourneyStandingInformation, YakumanInformation, YakuCount, TourneyPhase, PlayerRankingType, PlayerScoreTypeRanking, PlayerTeamRanking, SharedGroupRankingData, TourneyContestScoringDetailsWithId } from './types/types';
+import { Han } from '../majsoul/types/Han';
 import { ObjectId, FilterQuery, Condition, FindOneOptions, ObjectID } from 'mongodb';
 import * as fs from "fs";
 import * as path from "path";
@@ -743,6 +744,73 @@ export class RestApi {
 			}
 		});
 
+		this.app.get('/contests/:id/yaku',
+			param("id").isMongoId(),
+			query("yaku").isInt({ min: 0, max: Object.keys(Han).length / 2 }),
+			query("limit").isInt({ min: 1 }).optional(),
+			withData<{
+				id: string;
+				yaku: Han;
+				limit?: string;
+			}, any, YakuCount[]>(async (data, req, res) => {
+				const contestId = await this.contestExists(data.id);
+				if (!contestId) {
+					res.sendStatus(404);
+					return;
+				}
+
+				let limit = parseInt(data.limit);
+				if (isNaN(limit)) {
+					limit = Infinity;
+				}
+
+				const results: any[] = await this.mongoStore.gamesCollection.aggregate([
+					{
+						$match: {
+							contestId: contestId,
+							hidden: { "$ne": true }
+						}
+					},
+					{ $unwind: "$rounds" },
+					{ $unwind: { "path": "$rounds.rons", "preserveNullAndEmptyArrays": true } },
+					{ $addFields: { "win": { "$mergeObjects": ["$rounds.rons", "$rounds.tsumo"] } } },
+					{ $addFields: { "win.winner": { "$arrayElemAt": ["$players", "$win.winner"] } } },
+					{ $match: { "win.han": Number(data.yaku) } },
+					{
+						$group: {
+							_id: "$win.winner._id",
+							winnerId: { "$first": "$win.winner._id" },
+							count: { "$sum": 1 },
+						}
+					},
+					{
+						$lookup: {
+							from: "players",
+							localField: "winnerId",
+							foreignField: "_id",
+							as: "player"
+						}
+					},
+					{ $unwind: "$player" },
+					{ $unset: ["_id", "winnerId"] },
+					{ $sort: { "count": -1 } },
+					{ $limit: limit }
+				]).toArray();
+
+				res.send(results.map(entry => {
+					return {
+						yaku: data.yaku,
+						count: entry.count,
+						player: {
+							nickname: entry.player.nickname,
+							_id: entry.player._id.toHexString(),
+							zone: Majsoul.Api.getPlayerZone(entry.player.majsoulId)
+						}
+					}
+				}));
+			}));
+
+
 		this.app.get('/contests/:id/players',
 			param("id").isMongoId(),
 			query("gameLimit").isInt({ min: 0 }).optional(),
@@ -1113,6 +1181,9 @@ export class RestApi {
 					.not().isString().bail().isInt({ gt: 0 }).optional({ nullable: true }),
 				body(`${nameofContest('tourneyType')}.*.${nameofTourneyScoringType('suborder')}.*.${nameofTourneyScoringType('reverse')}`)
 					.not().isString().bail().isBoolean().optional({ nullable: true }),
+				body(nameofContest('yakuScoreboardTitle')).isString().bail().isLength({ max: 200 }).optional({ nullable: true }),
+				body(nameofContest('yakuScoreboardLimit')).not().isString().bail().isInt({ gt: 0, max: 50 }).optional({ nullable: true }),
+				body(nameofContest('yakuScoreboardYaku')).not().isString().bail().isNumeric().isWhitelisted(Object.keys(Han)).optional(),
 				async (req, res) => {
 					const errors = validationResult(req);
 					if (!errors.isEmpty()) {

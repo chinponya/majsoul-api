@@ -96,3 +96,9 @@ export interface YakumanInformation {
 		endTime: number;
 	}
 }
+
+export interface YakuCount {
+	yaku: Han;
+	count: number;
+	player: PlayerInformation;
+}

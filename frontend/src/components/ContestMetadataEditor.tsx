@@ -13,6 +13,7 @@ import { GameResult } from "majsoul-api/dist/rest";
 import { createGame, fetchGame, deleteGame, fetchPendingGames } from "src/api/Games";
 import { patchContest } from "src/api/Contests";
 import { dispatchContestPatchedAction } from "src/actions/contests/ContestPatchedAction";
+import { Han } from "majsoul-api/dist/majsoul/types";
 
 const CustomGameAdder: React.FC<{
 	contestId: string;
@@ -142,6 +143,7 @@ const tourneyContestTypeValues =
 export function ContestMetadataEditor(props: { contestId: string; }): JSX.Element {
 	const token = useSelector((state: IState) => state.user?.token);
 	const contest = useSelector((state: IState) => state.contestsById[props.contestId]);
+
 	const [majsoulFriendlyId, setMajsoulFriendlyId] = useState<number>(undefined);
 	const [type, setType] = useState<ContestType>(undefined);
 	const [tourneyType, setTourneyType] = useState<TourneyContestScoringType>(undefined);
@@ -152,9 +154,13 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 	const [tagline, setTagline] = useState<string>(undefined);
 	const [taglineAlternate, setTaglineAlternate] = useState<string>(undefined);
 	const [bonusPerGame, setBonusPerGame] = useState<number>(undefined);
+	const [yakuScoreboardTitle, setYakuScoreboardTitle] = useState<string>(undefined);
+	const [yakuScoreboardLimit, setYakuScoreboardLimit] = useState<number>(undefined);
+	const [yakuScoreboardYaku, setYakuScoreboardYaku] = useState<Han>(undefined);
 	const [track, setTrack] = useState<boolean>(undefined);
 	const [adminPlayerFetchRequested, setAdminPlayerFetchRequested] = useState<boolean>(undefined);
 	const dispatch = useDispatch();
+
 	if (token == null || contest == null) {
 		return null;
 	}
@@ -389,6 +395,89 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 		</Row>
 		<Row className="no-gutters">
 			<Col>
+				<h4>Yaku Scoreboard</h4>
+			</Col>
+		</Row>
+		<Col>
+			<Form inline className="justify-content">
+				<Form.Label
+					className="font-weight-bold mr-2"
+					htmlFor="contestYakuScoreboardYaku"
+				>
+					Yaku:
+					</Form.Label>
+				<Form.Control
+					id="contestYakuScoreboardYaku"
+					as="select"
+					custom
+					value={yakuScoreboardYaku ?? contest.yakuScoreboardYaku ?? ""}
+					size="sm"
+					onChange={(event) => setYakuScoreboardYaku(parseInt(event.target.value))}
+				>
+					<option key="" value=""></option>
+					{Object.keys(Han)
+						.filter(key => typeof Han[key as any] !== "number")
+						.map((value, index) => <option key={index} value={value}>{Han[value as any]}</option>)}
+				</Form.Control>
+			</Form>
+		</Col>
+		<Row className="no-gutters">
+			<Col>
+				<TextField
+					label="Title"
+					id="contestYakuScoreboardTitle"
+					fallbackValue={contest.yakuScoreboardTitle}
+					onCommit={(value) => {
+						setYakuScoreboardTitle(value)
+						return value;
+					}}
+				/>
+			</Col>
+		</Row>
+		<Row className="no-gutters">
+			<Col>
+				<TextField
+					label="Length"
+					id="contestYakuScoreboardLimit"
+					fallbackValue={contest.yakuScoreboardLimit?.toString() ?? ""}
+					onChange={(oldValue, newValue) => {
+						if (newValue === "") {
+							return {
+								value: null,
+								isValid: true,
+							};
+						}
+						const value = parseInt(newValue);
+						return {
+							isValid: value >= 0,
+							value: newValue,
+						}
+					}}
+					onCommit={(value: string, isValid: boolean) => {
+						if (value == null) {
+							if (value === null) {
+								setYakuScoreboardLimit(null);
+							}
+							return value;
+						}
+
+						if (isValid) {
+							const intValue = parseInt(value);
+							setYakuScoreboardLimit(intValue);
+							return intValue.toString();
+						}
+
+						if (yakuScoreboardLimit == null) {
+							return yakuScoreboardLimit as null | undefined;
+						}
+
+						return yakuScoreboardLimit?.toString();
+					}}
+				/>
+			</Col>
+		</Row>
+		<Row className="no-gutters">
+			<Col>
 				<Form.Check
 					inline
 					label="Track"
@@ -421,6 +510,9 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 						&& (contest.taglineAlternate === taglineAlternate || taglineAlternate === undefined)
 						&& (contest.maxGames === maxGames || maxGames === undefined)
 						&& (contest.bonusPerGame === bonusPerGame || bonusPerGame === undefined)
+						&& (contest.yakuScoreboardTitle === yakuScoreboardTitle || yakuScoreboardTitle == undefined)
+						&& (contest.yakuScoreboardYaku === yakuScoreboardYaku || yakuScoreboardYaku == undefined)
+						&& (contest.yakuScoreboardLimit === yakuScoreboardLimit || yakuScoreboardLimit == undefined)
 						&& (contest.track === track || track === undefined)
 						&& (contest.adminPlayerFetchRequested === adminPlayerFetchRequested || adminPlayerFetchRequested === undefined)
 					}
@@ -436,6 +528,9 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 							maxGames,
 							displayName,
 							bonusPerGame,
+							yakuScoreboardTitle,
+							yakuScoreboardYaku,
+							yakuScoreboardLimit,
 							track,
 							adminPlayerFetchRequested
 						}).then(contest => dispatchContestPatchedAction(dispatch, contest));
@@ -444,5 +539,5 @@ export function ContestMetadataEditor(props: { contestId: string; }): JSX.Elemen
 			</Col>
 		</Row>
 		<ContestCustomGames contestId={props.contestId} />
-	</Container>;
+	</Container >;
 }

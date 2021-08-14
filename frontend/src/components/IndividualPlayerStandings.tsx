@@ -46,7 +46,7 @@ const zoneMap: Record<PlayerZone, {
 	}
 }
 
-const Zone: React.FC<{
+export const Zone: React.FC<{
 	zone: PlayerZone
 }> = ({ zone }) => {
 	if (zone === PlayerZone.Unknown) {

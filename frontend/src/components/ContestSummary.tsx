@@ -11,6 +11,7 @@ import { GameResultSummary } from "./GameResultSummary";
 import { ContestType } from "majsoul-api/dist/store/types/types";
 import { ContestMetadataEditor } from "./ContestMetadataEditor";
 import { YakumanDisplay } from "./YakumanDisplay";
+import { YakuDisplay } from "./YakuStandings";
 import { BracketPlayerStandings } from "./BracketPlayerStandings";
 import { contestName } from "./utils";
 import { fetchGames } from "src/api/Games";
@@ -87,7 +88,7 @@ export function ContestSummary(props: {
 		</Container>;
 	}
 
-	return <ContestContext.Provider value={{contestId: props.contestId}}>
+	return <ContestContext.Provider value={{ contestId: props.contestId }}>
 		<Container>
 			<ContestHeader contest={contest} />
 			<ContestMetadataEditor contestId={contest._id} />
@@ -96,6 +97,7 @@ export function ContestSummary(props: {
 				: <TourneyContestSummary contestId={contest._id} />
 			}
 			<YakumanDisplay contestId={contest._id} />
+			<YakuDisplay contestId={contest._id} />
 		</Container>
 	</ContestContext.Provider>
 }

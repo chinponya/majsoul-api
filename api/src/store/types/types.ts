@@ -1,8 +1,8 @@
-import { Han } from "../../majsoul/types/Han";
 import { Player as MajsoulPlayer, Contest as MajsoulContest } from "../../majsoul/types/types";
 import { ContestPhaseTransition } from "./ContestPhaseTransition";
 import { DrawStatus } from "./DrawStatus";
 import { Wind } from "./Wind";
+import { Han } from "../../majsoul/types/Han";
 
 export enum GameResultVersion {
 	None,
@@ -92,7 +92,6 @@ interface TsumoRecord extends AgariInfo {
 interface RonRecord extends AgariInfo {
 	loser: number;
 }
-
 
 export interface GameResult<Id = any> {
 	config?: {
@@ -208,6 +207,9 @@ export interface TourneyContestPhase {
 	tourneyType?: TourneyContestScoringType | TourneyScoringInfo[];
 	maxGames?: number;
 	bonusPerGame?: number;
+	yakuScoreboardTitle?: string;
+	yakuScoreboardLimit?: number;
+	yakuScoreboardYaku?: Han;
 }
 
 export type ContestPhase<Id = any> = ContestPhaseShared<Id> & (LeagueContestPhase<Id> & TourneyContestPhase)
