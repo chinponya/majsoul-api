@@ -45,12 +45,16 @@ async function main() {
 
 	const mongoStore = new store.Store();
 	try {
-		await mongoStore.init(secrets.mongo?.username ?? "root", secrets.mongo?.password ?? "example");
+		await mongoStore.init(
+			secrets.mongo.username,
+			secrets.mongo.password,
+			secrets.mongo.address,
+			secrets.mongo.port
+		);
 	} catch (error) {
 		console.log("failed to connect to mongo db: ", error);
 		process.exit(1);
 	}
-
 
 	// player search
 	merge(

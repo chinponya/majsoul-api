@@ -40,8 +40,8 @@ export class Store {
 		return this.playerChangesSubject;
 	}
 
-	public async init(username: string, password: string): Promise<void> {
-		const url = `mongodb://${username}:${password}@localhost:27017/?authMechanism=SCRAM-SHA-256&authSource=admin`;
+	public async init(username: string, password: string, address: string, port: number): Promise<void> {
+		const url = `mongodb://${username}:${password}@${address}:${port}/?authMechanism=SCRAM-SHA-256&authSource=admin`;
 		const client = new MongoClient(url);
 
 		await client.connect();

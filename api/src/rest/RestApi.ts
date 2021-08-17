@@ -5,6 +5,7 @@ import * as store from '../store';
 import { GameResult, Session, ContestPlayer, Phase, PhaseMetadata, Contest, LeaguePhase, PlayerTourneyStandingInformation, YakumanInformation, YakuCount, TourneyPhase, PlayerRankingType, PlayerScoreTypeRanking, PlayerTeamRanking, SharedGroupRankingData, TourneyContestScoringDetailsWithId } from './types/types';
 import { Han } from '../majsoul/types/Han';
 import { ObjectId, FilterQuery, Condition, FindOneOptions, ObjectID } from 'mongodb';
+import * as url from "url";
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
@@ -1101,6 +1102,7 @@ export class RestApi {
 
 	public async init(root: { username: string, password: string }) {
 		const secrets = getSecrets();
+		const hostname = url.parse(secrets.publicAddress).hostname;
 
 		if (root?.username != null && root?.password != null) {
 			const salt = crypto.randomBytes(24).toString("hex");
@@ -1122,7 +1124,7 @@ export class RestApi {
 			);
 		}
 
-		this.app.listen(secrets.listenPort || 9515, () => console.log(`Express started`));
+		this.app.listen(secrets.listenPort, () => console.log(`Express started on port ${secrets.listenPort}`));
 
 		let privateKey: Buffer, publicKey: Buffer;
 		try {
@@ -1134,11 +1136,12 @@ export class RestApi {
 			return;
 		}
 
+
 		this.app.use(
 			expressJwt({
 				secret: publicKey,
-				audience: "riichi.moe",
-				issuer: "riichi.moe",
+				audience: hostname,
+				issuer: hostname,
 				algorithms: ["RS256"],
 				credentialsRequired: true,
 			}).unless({
@@ -1883,8 +1886,8 @@ export class RestApi {
 					privateKey,
 					{
 						algorithm: 'RS256',
-						issuer: "riichi.moe",
-						audience: "riichi.moe",
+						issuer: hostname,
+						audience: hostname,
 						expiresIn: "1d",
 						notBefore: 0,
 					},
