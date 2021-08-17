@@ -39,7 +39,12 @@ async function main() {
 	// api.getGame("").then(game => console.log(parseGameRecordResponse(game)));
 
 	const mongoStore = new store.Store();
-	await mongoStore.init(secrets.mongo?.username ?? "root", secrets.mongo?.password ?? "example");
+	await mongoStore.init(
+		secrets.mongo.username,
+		secrets.mongo.password,
+		secrets.mongo.address,
+		secrets.mongo.port
+	);
 
 	const googleAuth = new google.auth.OAuth2(
 		secrets.google.clientId,

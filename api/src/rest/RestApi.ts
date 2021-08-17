@@ -4,6 +4,7 @@ import * as cors from "cors";
 import * as store from '../store';
 import { GameResult, Session, ContestPlayer, Phase, PhaseMetadata, Contest, LeaguePhase, PlayerTourneyStandingInformation, YakumanInformation } from './types/types';
 import { ObjectId, FilterQuery, Condition, FindOneOptions, ObjectID } from 'mongodb';
+import * as url from "url";
 import * as fs from "fs";
 import * as path from "path";
 import * as crypto from "crypto";
@@ -299,8 +300,8 @@ interface PhaseInfo {
 }
 
 export class RestApi {
-	private static getKey(keyName: string): Promise<Buffer> {
-		return new Promise<Buffer>((res, rej) => fs.readFile(path.join(RestApi.keyLocation, keyName), (err, key) => {
+	private static getKey(keyPath: string): Promise<Buffer> {
+		return new Promise<Buffer>((res, rej) => fs.readFile(keyPath, (err, key) => {
 			if (err) {
 				console.log("couldn't load private key for auth tokens, disabling rigging");
 				console.log(err);
@@ -308,10 +309,6 @@ export class RestApi {
 			}
 			res(key);
 		}));
-	}
-
-	private static get keyLocation(): string {
-		return process.env.NODE_ENV === "production" ? "/run/secrets/" : path.dirname(process.argv[1]);
 	}
 
 	private app: express.Express;
@@ -1101,8 +1098,10 @@ export class RestApi {
 		this.oauth2Client = new google.auth.OAuth2(
 			secrets.google.clientId,
 			secrets.google.clientSecret,
-			`${process.env.NODE_ENV === "production" ? "https" : `http`}://${process.env.NODE_ENV === "production" ? "riichi.moe" : `localhost:8080`}/rigging/google`
+			`${secrets.publicAddress}/rigging/google`
 		);
+
+		const hostname = url.parse(secrets.publicAddress).hostname;
 
 		if (root?.username != null && root?.password != null) {
 			const salt = crypto.randomBytes(24).toString("hex");
@@ -1124,23 +1123,24 @@ export class RestApi {
 			);
 		}
 
-		this.app.listen(9515, () => console.log(`Express started`));
+		this.app.listen(secrets.listenPort, () => console.log(`Express started on port ${secrets.listenPort}`));
 
 		let privateKey: Buffer, publicKey: Buffer;
 		try {
-			privateKey = await RestApi.getKey("riichi.key.pem");
-			publicKey = await RestApi.getKey("riichi.crt.pem");
+			privateKey = await RestApi.getKey(secrets.privateKeyFile);
+			publicKey = await RestApi.getKey(secrets.publicKeyFile);
 		} catch (err) {
 			console.log("Couldn't load keys for auth tokens, disabling rigging");
 			console.log(err);
 			return;
 		}
 
+
 		this.app.use(
 			expressJwt({
 				secret: publicKey,
-				audience: "riichi.moe",
-				issuer: "riichi.moe",
+				audience: hostname,
+				issuer: hostname,
 				algorithms: ["RS256"],
 				credentialsRequired: true,
 			}).unless({
@@ -1894,8 +1894,8 @@ export class RestApi {
 					privateKey,
 					{
 						algorithm: 'RS256',
-						issuer: "riichi.moe",
-						audience: "riichi.moe",
+						issuer: hostname,
+						audience: hostname,
 						expiresIn: "1d",
 						notBefore: 0,
 					},
