@@ -29,7 +29,7 @@ const zoneMap: Record<PlayerZone, {
 	name: string,
 }> = {
 	[PlayerZone.China]: {
-		name: "中国",
+		name: "中文",
 		color: "#fece1b"
 	},
 	[PlayerZone.Japan]: {
