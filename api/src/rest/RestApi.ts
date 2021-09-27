@@ -467,6 +467,7 @@ export class RestApi {
 				const games = await this.mongoStore.gamesCollection.find(
 					{
 						contestId: phaseInfo.contest._id,
+						hidden: { $ne: true },
 					},
 					{
 						sort: {
