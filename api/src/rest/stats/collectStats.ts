@@ -52,12 +52,12 @@ export function collectStats(
 
 function selectPlayers(game: Store.GameResult<ObjectId>, players?: Record<string, boolean | ObjectId>): PlayerData[] {
 	return game.players
+		.filter(player => player !== null)
 		.map((player, seat) => ({
 			playerId: player._id,
 			teamId: (players == null || players[player._id.toHexString()] === true) ? undefined : players[player._id.toHexString()] as ObjectId,
 			seat
 		}))
-		.filter(player => players == null || !!players[player.playerId.toHexString()]);
 }
 
 interface BaseStatsSharedData {

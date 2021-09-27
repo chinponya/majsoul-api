@@ -3,12 +3,12 @@ import { Contest } from "src/State";
 
 export function levelToString(aiLevel: AILevel): string {
 	switch (aiLevel) {
+		case AILevel.None:
+			return "None";
 		case AILevel.Easy:
 			return "Easy";
 		case AILevel.Normal:
 			return "Normal";
-		case AILevel.Hard:
-			return "Hard";
 	}
 }
 
