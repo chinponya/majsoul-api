@@ -1,9 +1,9 @@
 import { Wind } from "../../store/types/Wind";
 
 export enum AILevel {
+	None = 0,
 	Easy = 1,
 	Normal = 2,
-	Hard = 3,
 }
 
 export interface Player {

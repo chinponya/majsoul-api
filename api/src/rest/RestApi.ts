@@ -2342,6 +2342,9 @@ export class RestApi {
 		const playerResults = games.reduce((total, next) => {
 			const maxGames = contest.maxGames ?? Infinity;
 			for (let seat = 0; seat < next.players.length; seat++) {
+				if (!next.players[seat]) {
+					continue;
+				}
 				const playerId = next.players[seat]._id.toHexString();
 				const playerData = total[playerId] ??= {
 					score: 0,
